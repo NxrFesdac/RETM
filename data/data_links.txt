@@ -1,0 +1,6 @@
+https://www.kaggle.com/datasets/wcukierski/enron-email-dataset
+https://www.kaggle.com/datasets/hijest/genre-classification-dataset-imdb
+https://www.kaggle.com/datasets/ymaricar/cmu-book-summary-dataset
+https://www.kaggle.com/datasets/therohk/million-headlines
+https://www.kaggle.com/datasets/sunnysai12345/news-summary
+https://www.kaggle.com/datasets/cesaber/spam-email-data-spamassassin-2002
