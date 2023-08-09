@@ -80,6 +80,7 @@ class RETM(object):
         train_perplexity=None,
         train_size = 1,
         preds = 0,
+        avg_words = 0,
         debug_mode=False,
     ):
         self.vocabulary = vocabulary
@@ -106,6 +107,7 @@ class RETM(object):
         self.eval_perplexity = eval_perplexity
         self.train_size = train_size
         self.preds = preds
+        self.avg_words = avg_words
         self.debug_mode = debug_mode
         self.device = torch.device(
             'cuda' if torch.cuda.is_available() else 'cpu')
@@ -129,6 +131,7 @@ class RETM(object):
             self.embeddings,
             train_embeddings,
             self.enc_drop,
+            self.avg_words,
             self.debug_mode).to(
             self.device)
         self.optimizer = self._get_optimizer(optimizer_type, lr, wdecay)

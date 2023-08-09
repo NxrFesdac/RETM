@@ -1,5 +1,3 @@
-# %%
-
 from embedded_topic_model.utils import preprocessing
 import pandas as pd
 import json
@@ -34,7 +32,7 @@ def preprocess(texto):
 
     return(texto)
 
-train = 0
+train = 1
 graphs = 1
 LDA = 1
 files = ["movies", "email", "books"]
@@ -114,7 +112,7 @@ elif file == "books":
     df = df.head(30000)
     documents = df.desc.to_list()
 
-# %%
+
 
 # Preprocessing the dataset
 vocabulary, train_dataset, test_dataset, = preprocessing.create_etm_datasets(
@@ -132,7 +130,7 @@ if train == 1:
 else:
     embeddings_mapping = models.KeyedVectors.load_word2vec_format('embeds.bin', binary=True)
 
-# %%
+
 etm_instance = RETM(
     vocabulary,
     embeddings=embeddings_mapping, # You can pass here the path to a word2vec file or
@@ -146,6 +144,7 @@ etm_instance = RETM(
     eval_perplexity=False,
     lr=0.01,
     wdecay=1.0e-5,
+    avg_words=avg_words,
     train_embeddings=False, # Optional. If True, ETM will learn word embeddings jointly with
                             # topic embeddings. By default, is False. If 'embeddings' argument
                             # is being passed, this argument must not be True
@@ -153,7 +152,7 @@ etm_instance = RETM(
 
 etm_instance.fit(train_dataset, test_dataset)
 
-# %%
+
 
 perplex = etm_instance.train_perplexity
 perplex_test = etm_instance._perplexity(test_dataset)
@@ -162,7 +161,7 @@ topic_coherence = etm_instance.get_topic_coherence()
 topic_diversity = etm_instance.get_topic_diversity()
 model = "R-ETM"
 
-# %%
+
 
 with open("metrics.json", "r") as jsonFile:
         data = json.load(jsonFile)
@@ -199,6 +198,8 @@ if graphs == 1:
 
         plt.show()
 
+
+
 etm_instance = ETM(
     vocabulary,
     embeddings=embeddings_mapping, # You can pass here the path to a word2vec file or
@@ -218,6 +219,8 @@ etm_instance = ETM(
 )
 
 etm_instance.fit(train_dataset, test_dataset)
+
+#%%
 
 perplex = etm_instance.train_perplexity
 perplex_test = etm_instance._perplexity(test_dataset)
@@ -299,7 +302,7 @@ if LDA ==  1:
     # save model
     pickle.dump(lda_model, open(filename, "wb"))
 
-# %%
+
 ### Perplexity graphs
 import seaborn as sns
 with open("metrics.json", "r") as jsonFile:
@@ -338,4 +341,4 @@ plt.show()
 sns.barplot(x=df_pplxity.file, y=df_pplxity.topic_diversity, hue=df_pplxity.model, data=df_pplxity.loc[df_pplxity.model != "LDA"])
 plt.show()
 
-# %%
+
