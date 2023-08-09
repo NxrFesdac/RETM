@@ -8,13 +8,13 @@ from typing import List
 from torch import optim
 from gensim.models import KeyedVectors
 
-from etm_mod.models.model import Model
-from etm_mod.utils import data
-from etm_mod.utils import embedding
-from etm_mod.utils import metrics
+from models.model import Model
+from utils import data
+from utils import embedding
+from utils import metrics
 
 
-class ETM(object):
+class RETM(object):
     """
     Creates an embedded topic model instance. The model hyperparameters are:
 
@@ -343,7 +343,6 @@ class ETM(object):
                     self.vocabulary_size,
                     self.device)
                 sums_2 = data_batch_2.sum(1).unsqueeze(1)
-                #res = torch.mm(theta, beta)
                 res = torch.mm(torch.max(theta, dim=0)[0], beta)
                 preds = torch.log(res + 1e-6)
                 recon_loss = -(preds * data_batch_2).sum(1)

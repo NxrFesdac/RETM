@@ -2,19 +2,20 @@
 
 from embedded_topic_model.utils import preprocessing
 import pandas as pd
-import csv
 import json
 import os
 from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer
 import re
-from gensim.models import Word2Vec, KeyedVectors
+from gensim.models import KeyedVectors
+from gensim import models
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 import matplotlib.cm as cm
 import numpy as np
 from collections import Counter
 import operator
+from embedded_topic_model.models.etm import ETM
+from models.retm import RETM
 
 
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:512"
@@ -33,7 +34,7 @@ def preprocess(texto):
 
     return(texto)
 
-train = 1
+train = 0
 graphs = 1
 LDA = 1
 files = ["movies", "email", "books"]
@@ -49,7 +50,8 @@ if file == "movies":
     clean_text = df.desc.str.cat(sep=" ")
     freq_words = Counter(clean_text.split())
     vocabulary_words = list(freq_words.keys())
-    print("Average number of words per row: ", round(np.mean(df.desc.str.split().str.len())))
+    avg_words = round(np.mean(df.desc.str.split().str.len()))
+    print("Average number of words per row: ", avg_words)
     print("Total number of unique words: ", len(vocabulary_words))
     Probabilidad_palabra = {k : v /len(clean_text.split()) for k, v in freq_words.most_common(20)}
 
@@ -73,7 +75,8 @@ elif file == "email":
     clean_text = df.desc.str.cat(sep=" ")
     freq_words = Counter(clean_text.split())
     vocabulary_words = list(freq_words.keys())
-    print("Average number of words per row: ", round(np.mean(df.desc.str.split().str.len())))
+    avg_words = round(np.mean(df.desc.str.split().str.len()))
+    print("Average number of words per row: ", avg_words)
     print("Total number of unique words: ", len(vocabulary_words))
     Probabilidad_palabra = {k : v /len(clean_text.split()) for k, v in freq_words.most_common(20)}
 
@@ -95,7 +98,8 @@ elif file == "books":
     clean_text = df.desc.str.cat(sep=" ")
     freq_words = Counter(clean_text.split())
     vocabulary_words = list(freq_words.keys())
-    print("Average number of words per row: ", round(np.mean(df.desc.str.split().str.len())))
+    avg_words = round(np.mean(df.desc.str.split().str.len()))
+    print("Average number of words per row: ", avg_words)
     print("Total number of unique words: ", len(vocabulary_words))
     Probabilidad_palabra = {k : v /len(clean_text.split()) for k, v in freq_words.most_common(20)}
 
@@ -126,13 +130,9 @@ from embedded_topic_model.utils import embedding
 if train == 1:
     embeddings_mapping = embedding.create_word2vec_embedding_from_dataset(documents, embedding_file_path="embeds", save_c_format_w2vec=True)
 else:
-    from gensim.models import KeyedVectors
-    from gensim import models
     embeddings_mapping = models.KeyedVectors.load_word2vec_format('embeds.bin', binary=True)
 
-from embedded_topic_model.models.etm import ETM
-import models.retm as RETM
-
+# %%
 etm_instance = RETM(
     vocabulary,
     embeddings=embeddings_mapping, # You can pass here the path to a word2vec file or
@@ -153,12 +153,16 @@ etm_instance = RETM(
 
 etm_instance.fit(train_dataset, test_dataset)
 
+# %%
+
 perplex = etm_instance.train_perplexity
 perplex_test = etm_instance._perplexity(test_dataset)
 topics, topic_values = etm_instance.get_topics(20)
 topic_coherence = etm_instance.get_topic_coherence()
 topic_diversity = etm_instance.get_topic_diversity()
 model = "R-ETM"
+
+# %%
 
 with open("metrics.json", "r") as jsonFile:
         data = json.load(jsonFile)

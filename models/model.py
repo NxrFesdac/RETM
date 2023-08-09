@@ -40,31 +40,17 @@ class Model(nn.Module):
             self.rho = embeddings.clone().float().to(self.device)
 
         # define the matrix containing the topic embeddings
-        # nn.Parameter(torch.randn(rho_size, num_topics))
         self.embedding_layer = nn.Embedding.from_pretrained(embeddings)
-        #self.lstm_layer = nn.LSTM(input_size=rho_size, hidden_size=t_hidden_size, num_layers=2, batch_first=True, bidirectional=True)
-        #self.alphas = nn.Linear(t_hidden_size*2, num_topics, bias=False)
         self.alphas = nn.Linear(rho_size, num_topics, bias=False)
-        #self.alphas = nn.Sequential(
-        #    nn.Linear(rho_size, t_hidden_size),
-        #    self.theta_act,
-        #    nn.Linear(t_hidden_size, t_hidden_size),
-        #    self.theta_act,
-        #    nn.Linear(t_hidden_size, num_topics, bias=True)
-        #)
 
         # define variational distribution for \theta_{1:D} via amortizartion
         self.dropout = nn.Dropout(0.5)
         self.lstm_theta = nn.LSTM(input_size=rho_size, hidden_size=t_hidden_size, num_layers=2, batch_first=True, bidirectional=True)
         self.q_theta = nn.Sequential(
             nn.Linear(t_hidden_size*2, t_hidden_size),
-            #nn.BatchNorm1d(t_hidden_size),
             self.theta_act,
-            #self.dropout,
             nn.Linear(t_hidden_size, t_hidden_size),
-            #nn.BatchNorm1d(t_hidden_size),
             self.theta_act,
-            #self.dropout,
         )
         self.mu_q_theta = nn.Linear(t_hidden_size*2, num_topics, bias=True)
         self.logsigma_q_theta = nn.Linear(t_hidden_size*2, num_topics, bias=True)
@@ -112,9 +98,6 @@ class Model(nn.Module):
         emb = self.embedding_layer(bows.long().T)
         output, dims = self.lstm_theta(emb.float())#bows.unsqueeze(0))
         output = self.dropout(output)
-        if len(output.shape) == 2:
-            print(1)
-        #q_theta = self.q_theta(output.squeeze())
         q_theta = output
         if self.enc_drop > 0:
             q_theta = self.t_drop(q_theta)
@@ -125,13 +108,6 @@ class Model(nn.Module):
         return mu_theta, logsigma_theta, kl_theta
 
     def get_beta(self):
-        #try:
-            # torch.mm(self.rho, self.alphas)
-        #    logit = self.alphas(self.rho.weight)
-        #except: #BaseException:
-        #emb = self.embedding_layer(self.rho.long().T)
-        #output, dims = self.lstm_layer(self.rho.unsqueeze(0))
-        #logit = self.alphas(output.squeeze())
         logit = self.alphas(self.rho)
         beta = F.softmax(
             logit, dim=0).transpose(
@@ -147,10 +123,7 @@ class Model(nn.Module):
         return theta, kld_theta
 
     def decode(self, theta, beta):
-        #res = torch.mm(theta, beta)
-        #res = torch.mm(torch.Tensor(theta.detach().cpu().numpy()[0, :, :]).to(self.device), beta)
         res = torch.mm(torch.max(theta, dim=0)[0], beta)
-        #preds = torch.log(res + 1e-6)
         preds = torch.log(res + 1e-6)
         return preds
 
