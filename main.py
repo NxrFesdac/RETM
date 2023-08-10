@@ -1,3 +1,5 @@
+# %%
+
 from embedded_topic_model.utils import preprocessing
 import pandas as pd
 import json
@@ -33,10 +35,10 @@ def preprocess(texto):
     return(texto)
 
 train = 1
-graphs = 1
-LDA = 1
+graphs = 0
+LDA = 0
 files = ["movies", "email", "books"]
-file = files[1]
+file = files[2]
 
 if file == "movies":
     df_mov1 = pd.read_csv("data/train_data.txt", sep=" ::: ", names=["id", "Movie", "Genre", "desc"])
@@ -161,7 +163,7 @@ topic_coherence = etm_instance.get_topic_coherence()
 topic_diversity = etm_instance.get_topic_diversity()
 model = "R-ETM"
 
-
+# %%
 
 with open("metrics.json", "r") as jsonFile:
         data = json.load(jsonFile)
@@ -198,7 +200,7 @@ if graphs == 1:
 
         plt.show()
 
-
+# %%
 
 etm_instance = ETM(
     vocabulary,
@@ -302,7 +304,7 @@ if LDA ==  1:
     # save model
     pickle.dump(lda_model, open(filename, "wb"))
 
-
+# %%
 ### Perplexity graphs
 import seaborn as sns
 with open("metrics.json", "r") as jsonFile:
@@ -341,4 +343,4 @@ plt.show()
 sns.barplot(x=df_pplxity.file, y=df_pplxity.topic_diversity, hue=df_pplxity.model, data=df_pplxity.loc[df_pplxity.model != "LDA"])
 plt.show()
 
-
+# %%

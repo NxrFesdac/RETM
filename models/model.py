@@ -91,14 +91,14 @@ class Model(nn.Module):
         else:
             return mu
 
-    def encode(self, bows, real_bows):
+    def encode(self, bows):
         """Returns paramters of the variational distribution for \theta.
 
         input: bows
                 batch of bag-of-words...tensor of shape bsz x V
         output: mu_theta, log_sigma_theta
         """
-        for counter, rows in enumerate(real_bows.cpu().numpy()):
+        for counter, rows in enumerate(bows.cpu().numpy()):
             word_position = []
             for position, value in enumerate(rows):
                 if value > 0:
@@ -113,6 +113,8 @@ class Model(nn.Module):
                 word_position_matrix = word_position
             else:    
                 word_position_matrix = np.dstack([word_position_matrix, word_position])
+        if len(word_position_matrix.shape) == 2:
+            word_position_matrix = word_position_matrix.reshape((word_position_matrix.shape[0], word_position_matrix.shape[1], 1))
         word_position_matrix = word_position_matrix.transpose(0, 2, 1)
         word_position_matrix = torch.from_numpy(word_position_matrix).to(self.device)
 
@@ -136,8 +138,8 @@ class Model(nn.Module):
             1, 0)  # softmax over vocab dimension
         return beta
 
-    def get_theta(self, normalized_bows, real_bows):
-        mu_theta, logsigma_theta, kld_theta = self.encode(normalized_bows, real_bows)
+    def get_theta(self, normalized_bows):
+        mu_theta, logsigma_theta, kld_theta = self.encode(normalized_bows)
         z = self.reparameterize(mu_theta, logsigma_theta)
         theta = F.softmax(z, dim=-1)
         if len(theta.shape) == 2:
@@ -152,7 +154,7 @@ class Model(nn.Module):
     def forward(self, bows, normalized_bows, theta=None, aggregate=True):
         # get \theta
         if theta is None:
-            theta, kld_theta = self.get_theta(normalized_bows, bows)
+            theta, kld_theta = self.get_theta(normalized_bows)
         else:
             kld_theta = None
 
