@@ -1,0 +1,9 @@
+LICENSE
+README.md
+setup.cfg
+setup.py
+recurrent_embedded_topic_model.egg-info/PKG-INFO
+recurrent_embedded_topic_model.egg-info/SOURCES.txt
+recurrent_embedded_topic_model.egg-info/dependency_links.txt
+recurrent_embedded_topic_model.egg-info/requires.txt
+recurrent_embedded_topic_model.egg-info/top_level.txt

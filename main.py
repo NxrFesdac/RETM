@@ -1,6 +1,4 @@
-# %%
-
-from embedded_topic_model.utils import preprocessing
+from recurrent_embedded_topic_model.utils import preprocessing
 import pandas as pd
 import json
 import os
@@ -15,7 +13,7 @@ import numpy as np
 from collections import Counter
 import operator
 from embedded_topic_model.models.etm import ETM
-from models.retm import RETM
+from recurrent_embedded_topic_model.models.retm import RETM
 
 
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:512"
@@ -133,7 +131,7 @@ else:
     embeddings_mapping = models.KeyedVectors.load_word2vec_format('embeds.bin', binary=True)
 
 
-etm_instance = RETM(
+retm_instance = RETM(
     vocabulary,
     embeddings=embeddings_mapping, # You can pass here the path to a word2vec file or
                                 # a KeyedVectors instance
@@ -152,18 +150,18 @@ etm_instance = RETM(
                             # is being passed, this argument must not be True
 )
 
-etm_instance.fit(train_dataset, test_dataset)
+retm_instance.fit(train_dataset, test_dataset)
 
 
 
-perplex = etm_instance.train_perplexity
-perplex_test = etm_instance._perplexity(test_dataset)
-topics, topic_values = etm_instance.get_topics(20)
-topic_coherence = etm_instance.get_topic_coherence()
-topic_diversity = etm_instance.get_topic_diversity()
+perplex = retm_instance.train_perplexity
+perplex_test = retm_instance._perplexity(test_dataset)
+topics, topic_values = retm_instance.get_topics(20)
+topic_coherence = retm_instance.get_topic_coherence()
+topic_diversity = retm_instance.get_topic_diversity()
 model = "R-ETM"
 
-# %%
+
 
 with open("metrics.json", "r") as jsonFile:
         data = json.load(jsonFile)
@@ -200,7 +198,7 @@ if graphs == 1:
 
         plt.show()
 
-# %%
+
 
 etm_instance = ETM(
     vocabulary,
@@ -304,7 +302,7 @@ if LDA ==  1:
     # save model
     pickle.dump(lda_model, open(filename, "wb"))
 
-# %%
+
 ### Perplexity graphs
 import seaborn as sns
 with open("metrics.json", "r") as jsonFile:
@@ -343,4 +341,4 @@ plt.show()
 sns.barplot(x=df_pplxity.file, y=df_pplxity.topic_diversity, hue=df_pplxity.model, data=df_pplxity.loc[df_pplxity.model != "LDA"])
 plt.show()
 
-# %%
+

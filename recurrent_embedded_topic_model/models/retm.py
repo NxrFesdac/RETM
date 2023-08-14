@@ -8,10 +8,10 @@ from typing import List
 from torch import optim
 from gensim.models import KeyedVectors
 
-from models.model import Model
-from utils import data
-from utils import embedding
-from utils import metrics
+from recurrent_embedded_topic_model.models.model import Model
+from recurrent_embedded_topic_model.utils import data
+from recurrent_embedded_topic_model.utils import embedding
+from recurrent_embedded_topic_model.utils import metrics
 
 
 class RETM(object):
