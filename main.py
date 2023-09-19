@@ -1,3 +1,4 @@
+# %%
 from recurrent_embedded_topic_model.utils import preprocessing
 import pandas as pd
 import json
@@ -32,11 +33,12 @@ def preprocess(texto):
 
     return(texto)
 
+# %%
 train = 1
 graphs = 0
-LDA = 0
-files = ["movies", "email", "books"]
-file = files[2]
+LDA = 1
+files = ["movies", "email", "books", "news"]
+file = files[3]
 
 if file == "movies":
     df_mov1 = pd.read_csv("data/train_data.txt", sep=" ::: ", names=["id", "Movie", "Genre", "desc"])
@@ -63,7 +65,11 @@ if file == "movies":
     plt.show()
     df.sample(frac=1, random_state=42)
     df = df.head(30000)
+    from sklearn.model_selection import train_test_split
+    X_train, X_test = train_test_split(df, test_size=0.05, random_state=42)
     documents = df.desc.to_list()
+    documents_train = X_train.desc.to_list()
+    documents_test = X_test.desc.to_list()
 
 elif file == "email":
     df = pd.read_csv("data/Spam_Ham_data.csv", encoding="latin1", names=["email", "label", "subject", "text"])
@@ -88,7 +94,11 @@ elif file == "email":
     plt.show()
     df.sample(frac=1, random_state=42)
     df = df.head(30000)
+    from sklearn.model_selection import train_test_split
+    X_train, X_test = train_test_split(df, test_size=0.05, random_state=42)
     documents = df.desc.to_list()
+    documents_train = X_train.desc.to_list()
+    documents_test = X_test.desc.to_list()
 elif file == "books":
     df = pd.read_csv("data/booksummaries.txt", sep="\t", names=["id", "random", "name", "author", "date", "genres", "desc"])
     df["desc"] = df.desc.apply(preprocess)
@@ -110,9 +120,39 @@ elif file == "books":
     plt.title('Word probability occurance')
     plt.show()
     df = df.head(30000)
+    from sklearn.model_selection import train_test_split
+    X_train, X_test = train_test_split(df, test_size=0.05, random_state=42)
     documents = df.desc.to_list()
+    documents_train = X_train.desc.to_list()
+    documents_test = X_test.desc.to_list()
+elif file == "news":
+    df = pd.read_csv("data/news.csv")
+    df["desc"] = df.texto_completo.apply(preprocess)
+    df.sample(frac=1, random_state=42)
+    clean_text = df.desc.str.cat(sep=" ")
+    freq_words = Counter(clean_text.split())
+    vocabulary_words = list(freq_words.keys())
+    avg_words = round(np.mean(df.desc.str.split().str.len()))
+    print("Average number of words per row: ", avg_words)
+    print("Total number of unique words: ", len(vocabulary_words))
+    Probabilidad_palabra = {k : v /len(clean_text.split()) for k, v in freq_words.most_common(20)}
 
+    x, y  = zip(*sorted(Probabilidad_palabra.items(),key=operator.itemgetter(1), reverse=True))
+    fig = plt.figure(figsize=(15,5))
+    plt.bar(x,y, 
+            color='darkgreen',
+            alpha=0.5)
+    plt.xticks(rotation=90, fontsize=12)
+    plt.title('Word probability occurance')
+    plt.show()
+    df = df.head(30000)
+    from sklearn.model_selection import train_test_split
+    X_train, X_test = train_test_split(df, test_size=0.05, random_state=42)
+    documents = df.desc.to_list()
+    documents_train = X_train.desc.to_list()
+    documents_test = X_test.desc.to_list()
 
+# %%
 
 # Preprocessing the dataset
 vocabulary, train_dataset, test_dataset, = preprocessing.create_etm_datasets(
@@ -130,7 +170,7 @@ if train == 1:
 else:
     embeddings_mapping = models.KeyedVectors.load_word2vec_format('embeds.bin', binary=True)
 
-
+# %%
 retm_instance = RETM(
     vocabulary,
     embeddings=embeddings_mapping, # You can pass here the path to a word2vec file or
@@ -188,7 +228,7 @@ if graphs == 1:
 
         df_topic = df_tsne.loc[df_tsne.index.isin(topics[topic])].reindex(topics[topic])
         df_topic["importance"] = topic_values[topic]
-        df_topic["importance"] = df_topic.importance * 10000
+        df_topic["importance"] = df_topic.importance * 10003
         ax.scatter(df_topic['x'], df_topic['y'], s=df_topic["importance"], color=colors)
         
         del df_topic["importance"]
@@ -271,7 +311,7 @@ if LDA ==  1:
 
     cv = CountVectorizer()
     mdt_frec = cv.fit_transform(df['desc']) 
-    terminos= cv.get_feature_names_out()
+    terminos= cv.get_feature_names()
     X = pd.DataFrame(mdt_frec.todense(), 
                                 index=df.index, 
                                 columns=terminos)
@@ -303,6 +343,69 @@ if LDA ==  1:
     pickle.dump(lda_model, open(filename, "wb"))
 
 
+# %%
+from contextualized_topic_models.models.ctm import CombinedTM
+from contextualized_topic_models.utils.data_preparation import TopicModelDataPreparation
+from contextualized_topic_models.utils.preprocessing import WhiteSpacePreprocessingStopwords
+import nltk
+from contextualized_topic_models.models.ctm import ZeroShotTM
+from contextualized_topic_models.evaluation.measures import CoherenceNPMI
+
+stopwords = list(stopwords.words("english"))
+
+sp = WhiteSpacePreprocessingStopwords(documents_train, stopwords_list=stopwords)
+preprocessed_documents, unpreprocessed_corpus, vocab, retained_indices = sp.preprocess()
+
+sp_test = WhiteSpacePreprocessingStopwords(documents_test, stopwords_list=stopwords)
+preprocessed_documents_test, unpreprocessed_corpus_test, vocab_test, retained_indices_test = sp.preprocess()
+
+tp = TopicModelDataPreparation("paraphrase-multilingual-mpnet-base-v2")
+# %%
+training_dataset = tp.fit(text_for_contextual=unpreprocessed_corpus, text_for_bow=preprocessed_documents)
+testing_dataset = tp.fit(text_for_contextual=unpreprocessed_corpus_test, text_for_bow=preprocessed_documents_test)
+# %%
+ctm = ZeroShotTM(bow_size=len(tp.vocab), contextual_size=768, n_components=50, num_epochs=20)
+ctm.fit(training_dataset, validation_dataset=testing_dataset) # run the model
+topics_predictions = ctm.get_thetas(training_dataset, n_samples=5) # get all the topic predictions
+zero_pplxity = ctm.pplxity_train
+zero_pplxity_test = ctm.pplxity_val
+textos_coherence = [x.split() for x in documents]
+npmi = CoherenceNPMI(texts=textos_coherence, topics=ctm.get_topic_lists())
+score = npmi.score()
+print(score)
+with open("metrics.json", "r") as jsonFile:
+        data = json.load(jsonFile)
+#data["ZeroShotTM"] = {}
+
+if file not in data["ZeroShotTM"].keys():
+    data["ZeroShotTM"][file] = {"perplexity_train": str(zero_pplxity), "perplexity_test":str(zero_pplxity_test), "topic_words": ctm.get_topic_lists(), "topic_coherence": str(score)}
+
+with open("metrics.json", "w") as jsonFile:
+    json.dump(data, jsonFile)
+
+# %%
+
+ctm = CombinedTM(bow_size=len(tp.vocab), contextual_size=768, n_components=50, num_epochs=20)
+ctm.fit(training_dataset, validation_dataset=testing_dataset) # run the model
+topics_predictions = ctm.get_thetas(training_dataset, n_samples=5) # get all the topic predictions
+zero_pplxity = ctm.pplxity_train
+zero_pplxity_test = ctm.pplxity_val
+textos_coherence = [x.split() for x in documents]
+npmi = CoherenceNPMI(texts=textos_coherence, topics=ctm.get_topic_lists())
+score = npmi.score()
+print(score)
+with open("metrics.json", "r") as jsonFile:
+        data = json.load(jsonFile)
+
+#data["CombinedTM"] = {}
+
+if file not in data["CombinedTM"].keys():
+    data["CombinedTM"][file] = {"perplexity_train": str(zero_pplxity), "perplexity_test":str(zero_pplxity_test), "topic_words": ctm.get_topic_lists(), "topic_coherence": str(score)}
+
+with open("metrics.json", "w") as jsonFile:
+    json.dump(data, jsonFile)
+
+# %%
 ### Perplexity graphs
 import seaborn as sns
 with open("metrics.json", "r") as jsonFile:
@@ -342,3 +445,5 @@ sns.barplot(x=df_pplxity.file, y=df_pplxity.topic_diversity, hue=df_pplxity.mode
 plt.show()
 
 
+
+# %%

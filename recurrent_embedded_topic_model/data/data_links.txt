@@ -4,3 +4,4 @@ https://www.kaggle.com/datasets/ymaricar/cmu-book-summary-dataset
 https://www.kaggle.com/datasets/therohk/million-headlines
 https://www.kaggle.com/datasets/sunnysai12345/news-summary
 https://www.kaggle.com/datasets/cesaber/spam-email-data-spamassassin-2002
+https://www.kaggle.com/datasets/kashnitsky/news-about-major-cryptocurrencies-20132018-40k/versions/5
